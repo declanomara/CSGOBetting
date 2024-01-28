@@ -155,14 +155,20 @@ class LoungeMatch:
 class UnifiedMatch:
     _bovada_match: BovadaMatch
     _lounge_match: LoungeMatch
+    last_updated: int = 0
 
     @property
     def time(self):
-        return datetime.fromtimestamp(self._bovada_match.time)
+        # We choose to use the CSGOLounge time as the time of the match since that is where the match is being bet on
+        return datetime.fromtimestamp(self._lounge_match.time)
     
     @property
     def competitors(self):
-        return self._bovada_match.team1, self._bovada_match.team2
+        return self._lounge_match.team1, self._lounge_match.team2
+    
+    @property
+    def status(self):
+        return self._lounge_match.status
     
     @property
     def bovada_odds(self):
@@ -195,6 +201,22 @@ class UnifiedMatch:
         print(f"    Payout: {self.lounge_multiplier[0]:0.2f}x vs {self.lounge_multiplier[1]:0.2f}x")
         print(f"    Expected Value: ${self.expected_value[0]:0.2f} vs ${self.expected_value[1]:0.2f}")
 
+    def to_JSON(self):
+        # This is slightly different from the serialize method, serialize keeps data in an easily recoverable format
+        # This method is used to send data from the server to the client, so it is formatted in a way that is easy to display
+
+        return {
+            "time": self.time,
+            "competitors": self.competitors,
+            "status": self.status,
+            "existing_value": self.existing_value,
+            "lounge_odds": self.lounge_odds,
+            "bovada_odds": self.bovada_odds,
+            "lounge_multiplier": self.lounge_multiplier,
+            "expected_value": self.expected_value,
+            "last_updated": self.last_updated
+        }
+
     def serialize(self):
         return {
             "lounge_time": int(self._lounge_match.time),
@@ -207,7 +229,8 @@ class UnifiedMatch:
             "bovada_team1": self._bovada_match.team1,
             "bovada_team2": self._bovada_match.team2,
             "bovada_t1_moneyline": self._bovada_match.team1_moneyline,
-            "bovada_t2_moneyline": self._bovada_match.team2_moneyline
+            "bovada_t2_moneyline": self._bovada_match.team2_moneyline,
+            "last_updated": self.last_updated
         }
     
     @staticmethod
@@ -227,5 +250,6 @@ class UnifiedMatch:
                 team2=serialized["lounge_team2"],
                 t1_value=serialized["lounge_t1_value"],
                 t2_value=serialized["lounge_t2_value"]
-            )
+            ),
+            last_updated=serialized["last_updated"]
         )

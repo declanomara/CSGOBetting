@@ -102,7 +102,8 @@ def pair_matches(bovada_matches, lounge_matches):
     return pairs, unpaired
 
 def unify_matches(pairs):
-    return [UnifiedMatch(bm, lm) for bm, lm in pairs]
+    now = int(time.time())
+    return [UnifiedMatch(bm, lm, now) for bm, lm in pairs]
 
 def update_matches(session, db: Database):
     # Get Bovada matches
@@ -158,10 +159,5 @@ def main():
     session.close()
 
     print(f"Database now contains {db.count()} matches.")
-
-    # for match in db.get_matches():
-    #     match.pprint()
-    #     print()
-
 if __name__ == "__main__":
     main()

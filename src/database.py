@@ -1,11 +1,31 @@
 import sqlite3
 
-from models import UnifiedMatch
+try:
+    from .models import UnifiedMatch
+except ImportError:
+    from models import UnifiedMatch
 
 class Database:
-    def __init__(self, path):
-        self._conn = sqlite3.connect(path)
+    def __init__(self, path, auto_connect=True, auto_init=True):
+        self.path = path
+        self._conn = None
+        self._cur = None
+
+        if auto_connect:
+            self.connect()
+        
+        if auto_init:
+            self.init()
+        
+    def connect(self):
+        self._conn = sqlite3.connect(self.path)
         self._cur = self._conn.cursor()
+
+    def init(self):
+        if self._cur is None:
+            raise Exception("Database not connected")
+        
+        # Create the matches table if it does not exist
         self._cur.execute('''CREATE TABLE IF NOT EXISTS matches (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             lounge_time INTEGER,
@@ -19,9 +39,9 @@ class Database:
             bovada_team2 TEXT,
             bovada_t1_moneyline REAL,
             bovada_t2_moneyline REAL,
-            UNIQUE(lounge_time, lounge_status, lounge_team1, lounge_team2, lounge_t1_value, lounge_t2_value, bovada_time, bovada_team1, bovada_team2, bovada_t1_moneyline, bovada_t2_moneyline)
+            last_updated INTEGER,
+            UNIQUE(lounge_time, bovada_time, lounge_team1, lounge_team2, bovada_team1, bovada_team2)
         )''')
-        self._conn.commit()
 
     def _row_to_match(self, row):
         serialized = {
@@ -35,13 +55,14 @@ class Database:
             'bovada_team1': row[8],
             'bovada_team2': row[9],
             'bovada_t1_moneyline': row[10],
-            'bovada_t2_moneyline': row[11]
+            'bovada_t2_moneyline': row[11],
+            'last_updated': row[12]
         }
         return UnifiedMatch.deserialize(serialized)
 
     def insert_match(self, match: UnifiedMatch):
         serialized = match.serialize()
-        query = "INSERT INTO matches (lounge_time, lounge_status, lounge_team1, lounge_team2, lounge_t1_value, lounge_t2_value, bovada_time, bovada_team1, bovada_team2, bovada_t1_moneyline, bovada_t2_moneyline) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        query = "INSERT INTO matches (lounge_time, lounge_status, lounge_team1, lounge_team2, lounge_t1_value, lounge_t2_value, bovada_time, bovada_team1, bovada_team2, bovada_t1_moneyline, bovada_t2_moneyline, last_updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         
         try:
             self._cur.execute(query, (
@@ -55,7 +76,8 @@ class Database:
                 serialized['bovada_team1'],
                 serialized['bovada_team2'],
                 serialized['bovada_t1_moneyline'],
-                serialized['bovada_t2_moneyline']
+                serialized['bovada_t2_moneyline'],
+                serialized['last_updated']
             ))
             self._conn.commit()
             return True
@@ -66,7 +88,7 @@ class Database:
     def update_match(self, match: UnifiedMatch):
         # Update the match in the database with the same lounge_time and bovada_time
         serialized = match.serialize()
-        query = "UPDATE matches SET lounge_status = ?, lounge_t1_value = ?, lounge_t2_value = ?, bovada_t1_moneyline = ?, bovada_t2_moneyline = ? WHERE lounge_time = ? AND bovada_time = ?"
+        query = "UPDATE matches SET lounge_status = ?, lounge_t1_value = ?, lounge_t2_value = ?, bovada_t1_moneyline = ?, bovada_t2_moneyline = ?, last_updated = ? WHERE lounge_time = ? AND bovada_time = ?"
         try:
             self._cur.execute(query, (
                 serialized['lounge_status'],
@@ -74,6 +96,7 @@ class Database:
                 serialized['lounge_t2_value'],
                 serialized['bovada_t1_moneyline'],
                 serialized['bovada_t2_moneyline'],
+                serialized['last_updated'],
                 serialized['lounge_time'],
                 serialized['bovada_time']
             ))
@@ -96,6 +119,26 @@ class Database:
             matches.append(match)
         return matches
 
+    def get_matches_before_time(self, time):
+        query = "SELECT * FROM matches WHERE lounge_time < ?"
+        self._cur.execute(query, (time,))
+        rows = self._cur.fetchall()
+        matches = []
+        for row in rows:
+            match = self._row_to_match(row)
+            matches.append(match)
+        return matches
+    
+    def get_matches_between_times(self, start, end):
+        query = "SELECT * FROM matches WHERE lounge_time > ? AND lounge_time < ?"
+        self._cur.execute(query, (start, end))
+        rows = self._cur.fetchall()
+        matches = []
+        for row in rows:
+            match = self._row_to_match(row)
+            matches.append(match)
+        return matches
+    
     def get_matches(self):
         # Return all matches in the database in order of bovada_time
         query = "SELECT * FROM matches"
