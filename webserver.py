@@ -1,7 +1,9 @@
 import sqlite3
 
-from flask import Flask, g
+from flask import Flask, g, render_template
 from src.models import UnifiedMatch
+from main import datetime_to_timestamp
+from src.database import Database
 
 app = Flask(__name__)
 
@@ -10,13 +12,9 @@ DB_PATH = "matches.db"
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
-        db = g._database = sqlite3.connect(DB_PATH)
-
-    def make_dicts(cursor, row):
-        return dict((cursor.description[idx][0], value)
-                    for idx, value in enumerate(row))
-
-    db.row_factory = make_dicts
+        # db = g._database = sqlite3.connect(DB_PATH)
+        # Use Database class instead of sqlite3.connect
+        db = g._database = Database(DB_PATH)
 
     return db
 
@@ -32,9 +30,10 @@ def hello():
 
 @app.route("/matches")
 def matches():
-    matches = get_db().execute("SELECT * FROM matches").fetchall()
+    matches = get_db().get_matches()
 
-    return {"matches": matches}
+    return render_template("matches.html", matches=matches, datetime_to_timestamp=datetime_to_timestamp)
+
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
