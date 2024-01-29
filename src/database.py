@@ -27,7 +27,7 @@ class Database:
         
         # Create the matches table if it does not exist
         self._cur.execute('''CREATE TABLE IF NOT EXISTS matches (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             lounge_time INTEGER,
             lounge_status TEXT,
             lounge_team1 TEXT,
@@ -45,6 +45,7 @@ class Database:
 
     def _row_to_match(self, row):
         serialized = {
+            'lounge_id': row[0],
             'lounge_time': row[1],
             'lounge_status': row[2],
             'lounge_team1': row[3],
@@ -62,10 +63,11 @@ class Database:
 
     def insert_match(self, match: UnifiedMatch):
         serialized = match.serialize()
-        query = "INSERT INTO matches (lounge_time, lounge_status, lounge_team1, lounge_team2, lounge_t1_value, lounge_t2_value, bovada_time, bovada_team1, bovada_team2, bovada_t1_moneyline, bovada_t2_moneyline, last_updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        query = "INSERT INTO matches (id, lounge_time, lounge_status, lounge_team1, lounge_team2, lounge_t1_value, lounge_t2_value, bovada_time, bovada_team1, bovada_team2, bovada_t1_moneyline, bovada_t2_moneyline, last_updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         
         try:
             self._cur.execute(query, (
+                serialized['lounge_id'],
                 serialized['lounge_time'],
                 serialized['lounge_status'],
                 serialized['lounge_team1'],
@@ -86,9 +88,9 @@ class Database:
             return False
 
     def update_match(self, match: UnifiedMatch):
-        # Update the match in the database with the same lounge_time and bovada_time
+        # Update the match in the database with the same id
         serialized = match.serialize()
-        query = "UPDATE matches SET lounge_status = ?, lounge_t1_value = ?, lounge_t2_value = ?, bovada_t1_moneyline = ?, bovada_t2_moneyline = ?, last_updated = ? WHERE lounge_time = ? AND bovada_time = ?"
+        query = "UPDATE matches SET lounge_status = ?, lounge_t1_value = ?, lounge_t2_value = ?, bovada_t1_moneyline = ?, bovada_t2_moneyline = ?, last_updated = ? WHERE id = ?"
         try:
             self._cur.execute(query, (
                 serialized['lounge_status'],
@@ -97,8 +99,7 @@ class Database:
                 serialized['bovada_t1_moneyline'],
                 serialized['bovada_t2_moneyline'],
                 serialized['last_updated'],
-                serialized['lounge_time'],
-                serialized['bovada_time']
+                serialized['lounge_id']
             ))
             self._conn.commit()
             return True

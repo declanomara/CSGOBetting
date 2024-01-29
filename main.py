@@ -2,6 +2,7 @@ import requests
 import json
 import pytz
 import time
+import argparse
 
 from datetime import datetime
 from src.database import Database
@@ -20,6 +21,7 @@ def datetime_to_timestamp(dt):
 
     # Convert to timestamp
     return dt.strftime('%A, %B %d (%I:%M%p %Z)')
+
 
 def get_bovada_matches(session):
     response = session.get(BOVADA_URL)
@@ -101,9 +103,11 @@ def pair_matches(bovada_matches, lounge_matches):
 
     return pairs, unpaired
 
+
 def unify_matches(pairs):
     now = int(time.time())
     return [UnifiedMatch(bm, lm, now) for bm, lm in pairs]
+
 
 def update_matches(session, db: Database):
     # Get Bovada matches
@@ -136,7 +140,7 @@ def update_matches(session, db: Database):
     return additions, updates
 
 
-def main():
+def main(database_dir):
     # Create session
     session = requests.Session()
 
@@ -147,7 +151,7 @@ def main():
     })
 
     # Create database
-    db = Database("matches.db")
+    db = Database(database_dir)
 
     # Update matches
     print(f"Updating matches at {datetime_to_timestamp(datetime.now())}...")
@@ -159,5 +163,10 @@ def main():
     session.close()
 
     print(f"Database now contains {db.count()} matches.")
+
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description='CSGO Betting')
+    parser.add_argument('database_dir', type=str, help='Path to the database directory')
+    args = parser.parse_args()
+
+    main(args.database_dir)

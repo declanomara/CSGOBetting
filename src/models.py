@@ -91,6 +91,7 @@ lounge_to_bovada = {
 
 @dataclass
 class LoungeMatch:
+    id: int
     time: int
     status: int
     team1: str
@@ -120,6 +121,7 @@ class LoungeMatch:
     
     @staticmethod
     def from_dict(match_dict):
+        id = int(match_dict["m_id"])
         time = int(match_dict["m_time"])
         status = int(match_dict["m_status"])
 
@@ -129,7 +131,7 @@ class LoungeMatch:
 
         # If no bets have been placed on the match, the sumbets key will not exist
         if "sumbets" not in match_dict:
-            return LoungeMatch(time, status, team1, team2, 0, 0)
+            return LoungeMatch(id, time, status, team1, team2, 0, 0)
         
         # Convert the currencies to USD and calculate the total value of each team
         # TODO: Update the exchange rates periodically
@@ -149,7 +151,7 @@ class LoungeMatch:
             t1_value += sumbets[currency]["1"] * TO_USD[currency]
             t2_value += sumbets[currency]["2"] * TO_USD[currency]
 
-        return LoungeMatch(time, status, team1, team2, t1_value / 100, t2_value / 100)
+        return LoungeMatch(id, time, status, team1, team2, t1_value / 100, t2_value / 100)
     
 @dataclass
 class UnifiedMatch:
@@ -175,6 +177,10 @@ class UnifiedMatch:
         return self._bovada_match.t1_odds, self._bovada_match.t2_odds
     
     @property
+    def lounge_id(self):
+        return self._lounge_match.id
+    
+    @property
     def lounge_odds(self):
         return self._lounge_match.t1_odds, self._lounge_match.t2_odds
     
@@ -194,7 +200,7 @@ class UnifiedMatch:
         return t1_ev, t2_ev
     
     def pprint(self):
-        print(f"{self.competitors[0]} vs {self.competitors[1]} @ {self.time}")
+        print(f"{self.competitors[0]} vs {self.competitors[1]} @ {self.time} (ID: {self.lounge_id})")
         print(f"    Existing value: ${self.existing_value[0]:0.2f} vs ${self.existing_value[1]:0.2f}")
         print(f"    (Lounge) {self.lounge_odds[0] * 100:0.2f}% vs {self.lounge_odds[1] * 100:0.2f}%")
         print(f"    (Bovada) {self.bovada_odds[0] * 100:0.2f}% vs {self.bovada_odds[1] * 100:0.2f}%")
@@ -206,6 +212,7 @@ class UnifiedMatch:
         # This method is used to send data from the server to the client, so it is formatted in a way that is easy to display
 
         return {
+            "id": self.lounge_id,
             "time": self.time,
             "competitors": self.competitors,
             "status": self.status,
@@ -219,6 +226,7 @@ class UnifiedMatch:
 
     def serialize(self):
         return {
+            "lounge_id": int(self._lounge_match.id),
             "lounge_time": int(self._lounge_match.time),
             "lounge_status": self._lounge_match.status,
             "lounge_team1": self._lounge_match.team1,
@@ -244,6 +252,7 @@ class UnifiedMatch:
                 team2_moneyline=serialized["bovada_t2_moneyline"]
             ),
             LoungeMatch(
+                id=serialized["lounge_id"],
                 time=serialized["lounge_time"],
                 status=serialized["lounge_status"],
                 team1=serialized["lounge_team1"],
