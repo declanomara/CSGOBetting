@@ -161,3 +161,6 @@ cython_debug/
 
 # Project Specific
 matches.db
+chrome_user_data/
+credentials.json
+cookies.json
