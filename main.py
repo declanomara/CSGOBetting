@@ -24,9 +24,12 @@ def datetime_to_timestamp(dt):
 
 
 def get_bovada_matches(session):
-    response = session.get(BOVADA_URL)
-
-    # TODO: Handle errors
+    try:
+        response = session.get(BOVADA_URL)
+        response.raise_for_status()  # Raise an exception if the request was not successful
+    except requests.exceptions.RequestException as e:
+        print(f"Error occurred during request: {e}")
+        return []  # Return an empty list to indicate no matches
 
     events = []
     for obj in response.json():
@@ -36,8 +39,11 @@ def get_bovada_matches(session):
     for event in events:
         if len(event["competitors"]) != 2:
             continue    
-
-        bovada_matches.append(BovadaMatch.from_event(event))
+        
+        try:
+            bovada_matches.append(BovadaMatch.from_event(event))
+        except Exception as e:
+            print(f"Error occurred while creating BovadaMatch: {e}")
     
     return bovada_matches
 
@@ -62,12 +68,35 @@ def parse_lounge_matches(html):
 
 
 def get_lounge_matches(session):
-    response = session.get(LOUNGE_URL)
-
-    # TODO: Handle errors
+    try:
+        response = session.get(LOUNGE_URL)
+        response.raise_for_status()  # Raise an exception if the request was not successful
+    except requests.exceptions.RequestException as e:
+        print(f"Error occurred during request: {e}")
+        return []  # Return an empty list to indicate no matches
 
     lounge_data = parse_lounge_matches(response.text)
-    return [LoungeMatch.from_dict(match) for match in lounge_data if int(match["m_status"]) == 0]
+    lounge_matches = []
+    for match in lounge_data:
+        try:
+            lounge_match = LoungeMatch.from_dict(match)
+            lounge_matches.append(lounge_match)
+        except Exception as e:
+            print(f"Error occurred while creating LoungeMatch: {e}")
+
+    return lounge_matches
+
+
+def find_closest_match(bovada_match, lounge_matches):
+    least_diff = 1e9
+    closest_match = None
+    for lm in lounge_matches:
+        diff = abs(lm.time - bovada_match.time)
+        if diff < least_diff:
+            least_diff = diff
+            closest_match = lm
+
+    return closest_match
 
 
 def pair_matches(bovada_matches, lounge_matches):
@@ -75,24 +104,12 @@ def pair_matches(bovada_matches, lounge_matches):
     pairs = []
 
     for bm in bovada_matches:
-        # Find the corresponding LoungeMatch
-        least_diff = 1e9
-        closest_match = None
-        for lm in lounge_matches:
-            diff = abs(lm.time - bm.time)
-            if diff < least_diff and lm.team1 == bm.team1 and lm.team2 == bm.team2:
-                least_diff = diff
-                closest_match = lm
-
+        closest_match = find_closest_match(bm, lounge_matches)
+        
         # If no match was found, try reversing the teams
         if closest_match is None:
-            
             bm = bm.reversed()
-            for lm in lounge_matches:
-                diff = abs(lm.time - bm.time)
-                if diff < least_diff and lm.team1 == bm.team1 and lm.team2 == bm.team2:
-                    least_diff = diff
-                    closest_match = lm
+            closest_match = find_closest_match(bm, lounge_matches)
         
         # If no match was found after reversing the teams, add to unpaired
         if closest_match is None:
@@ -117,7 +134,7 @@ def update_matches(session, db: Database):
     lounge_matches = get_lounge_matches(session)
 
     # Pair matches
-    paired_matches, unpaired_matches = pair_matches(bovada_matches, lounge_matches)
+    paired_matches, _ = pair_matches(bovada_matches, lounge_matches)
 
     # Unify matches into general format containing all information
     unified_matches = unify_matches(paired_matches)
