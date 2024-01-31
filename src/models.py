@@ -1,3 +1,5 @@
+import time
+
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -8,7 +10,14 @@ def moneyline_to_probability(moneyline):
         return 100 / (moneyline + 100)
     else:
         return -moneyline / (-moneyline + 100)
-    
+
+# Helper function to parse moneyline odds from Bovada
+# Sometimes the moneyline is EVEN, which is equivalent to +100
+def parse_moneyline(moneyline):
+        if moneyline == "EVEN":
+            return 100
+        
+        return float(moneyline)
 
 @dataclass
 class BovadaMatch:
@@ -42,15 +51,15 @@ class BovadaMatch:
             team1_moneyline=self.team2_moneyline,
             team2_moneyline=self.team1_moneyline
         )
-    
+      
     @staticmethod
     def from_event(event):
         return BovadaMatch(
             time=int(event["startTime"] / 1000),
             team1=event["competitors"][0]["name"],
             team2=event["competitors"][1]["name"],
-            team1_moneyline=float(event["displayGroups"][0]["markets"][0]["outcomes"][0]["price"]["american"]),
-            team2_moneyline=float(event["displayGroups"][0]["markets"][0]["outcomes"][1]["price"]["american"])
+            team1_moneyline=parse_moneyline(event["displayGroups"][0]["markets"][0]["outcomes"][0]["price"]["american"]),
+            team2_moneyline=parse_moneyline(event["displayGroups"][0]["markets"][0]["outcomes"][1]["price"]["american"])
         )
 
 
@@ -262,3 +271,30 @@ class UnifiedMatch:
             ),
             last_updated=serialized["last_updated"]
         )
+    
+class Bet:
+    def __init__(self, match_id:int , side: int, amount: float, time_placed:int = None):
+        self.match_id = match_id
+        self.side = side
+        self.amount = amount
+        self.time_placed = time_placed if time_placed is not None else int(time.time())
+
+    def to_JSON(self):
+        return {
+            "match_id": self.match_id,
+            "side": self.side,
+            "amount": self.amount,
+            "time_placed": self.time_placed
+        }
+    
+    @staticmethod
+    def from_JSON(json):
+        return Bet(
+            match_id=json["match_id"],
+            side=json["side"],
+            amount=json["amount"],
+            time_placed=json["time_placed"]
+        )
+
+
+    

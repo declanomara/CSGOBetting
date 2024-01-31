@@ -1,9 +1,9 @@
 import sqlite3
 
 try:
-    from .models import UnifiedMatch
+    from .models import UnifiedMatch, Bet
 except ImportError:
-    from models import UnifiedMatch
+    from models import UnifiedMatch, Bet
 
 class Database:
     def __init__(self, path, auto_connect=True, auto_init=True):
@@ -41,6 +41,15 @@ class Database:
             bovada_t2_moneyline REAL,
             last_updated INTEGER,
             UNIQUE(lounge_time, bovada_time, lounge_team1, lounge_team2, bovada_team1, bovada_team2)
+        )''')
+
+        # Create the bets table if it does not exist
+        self._cur.execute('''
+            CREATE TABLE IF NOT EXISTS bets (
+                match_id INT PRIMARY KEY,
+                side INT,
+                amount FLOAT,
+                time INT
         )''')
 
     def _row_to_match(self, row):
@@ -142,7 +151,7 @@ class Database:
     
     def get_matches(self):
         # Return all matches in the database in order of bovada_time
-        query = "SELECT * FROM matches"
+        query = "SELECT * FROM matches ORDER BY bovada_time ASC"
         self._cur.execute(query)
         rows = self._cur.fetchall()
         matches = []
@@ -183,9 +192,65 @@ class Database:
             matches.append(match)
         return matches
     
-    def count(self):
+    def get_match_by_id(self, match_id):
+        query = "SELECT * FROM matches WHERE id = ?"
+        self._cur.execute(query, (match_id,))
+        row = self._cur.fetchone()
+        if row is None:
+            return None
+        return self._row_to_match(row)
+    
+    def count_matches(self):
         # Return the number of matches in the database
         query = "SELECT COUNT(*) FROM matches"
         self._cur.execute(query)
         return self._cur.fetchone()[0]
     
+    def _row_to_bet(self, row):
+        return Bet(
+            match_id=row[0],
+            side=row[1],
+            amount=row[2],
+            time_placed=row[3]
+        )
+    
+    def get_bets(self):
+        # Return all bets in the database in order of time placed (newest first)
+        query = "SELECT * FROM bets ORDER BY time ASC"
+        self._cur.execute(query)
+        rows = self._cur.fetchall()
+        return [self._row_to_bet(row) for row in rows]
+    
+    def get_bet_by_match_id(self, match_id):
+        query = "SELECT * FROM bets WHERE match_id = ?"
+        self._cur.execute(query, (match_id,))
+        row = self._cur.fetchone()
+        if row is None:
+            return None
+        return self._row_to_bet(row)
+    
+    def count_bets(self):
+        # Return the number of bets in the database
+        query = "SELECT COUNT(*) FROM bets"
+        self._cur.execute(query)
+        return self._cur.fetchone()[0]
+    
+    def insert_bet(self, bet):
+        # Insert a bet into the database
+        query = "INSERT INTO bets (match_id, side, amount, time) VALUES (?, ?, ?, ?)"
+        self._cur.execute(query, (bet.match_id, bet.side, bet.amount, bet.time_placed))
+        self._conn.commit()
+
+    def update_bet(self, bet):
+        # Update a bet in the database
+        query = "UPDATE bets SET side = ?, amount = ?, time = ? WHERE match_id = ?"
+        self._cur.execute(query, (bet.side, bet.amount, bet.time_placed, bet.match_id))
+        self._conn.commit()
+
+    def delete_bet_by_match_id(self, match_id):
+        query = "DELETE FROM bets WHERE match_id = ?"
+        self._cur.execute(query, (match_id,))
+        self._conn.commit()
+    
+
+
