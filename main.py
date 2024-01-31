@@ -7,6 +7,7 @@ import argparse
 from datetime import datetime
 from src.database import Database
 from src.models import BovadaMatch, LoungeMatch, UnifiedMatch
+from pprint import pprint
 
 BOVADA_URL = "https://www.bovada.lv/services/sports/event/coupon/events/A/description/esports/counter-strike-2"
 LOUNGE_URL = "https://csgolounge.com"
@@ -44,6 +45,7 @@ def get_bovada_matches(session):
             bovada_matches.append(BovadaMatch.from_event(event))
         except Exception as e:
             print(f"Error occurred while creating BovadaMatch: {e}")
+            pprint(event)
     
     return bovada_matches
 
@@ -134,6 +136,8 @@ def update_matches(session, db: Database):
     lounge_matches = get_lounge_matches(session)
 
     # Pair matches
+    # TODO: Sometimes unpaired matches contain matches that are already in the database, in which case we should update the match
+    #       These updates will include the outcome of the match, which is important
     paired_matches, _ = pair_matches(bovada_matches, lounge_matches)
 
     # Unify matches into general format containing all information
@@ -179,7 +183,7 @@ def main(database_dir):
     # Close session
     session.close()
 
-    print(f"Database now contains {db.count()} matches.")
+    print(f"Database now contains {db.count_matches()} matches.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='CSGO Betting')
