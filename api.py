@@ -1,5 +1,6 @@
 import time
 import requests
+import json
 
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
@@ -7,10 +8,11 @@ from src.database import Database
 from src.auth import CSGOLoungeAuth
 from src.models import Bet
 
+config = json.load(open("api_config.json", "r"))
 
-DB_PATH = "csgobetting.db"
-STEAM_COOKIES_PATH = "/Users/declan/Documents/Programs/CSGOBetting/notebooks/cookies.json"
-AUTHENTICATION_SAVE_FILE = "authentication.json"
+DB_PATH = config["db_path"]
+STEAM_COOKIES_PATH = config["cookies_path"]
+AUTHENTICATION_SAVE_FILE = config["authentication"]
 
 db = Database(DB_PATH, auto_connect=False, auto_init=False)
 auth = CSGOLoungeAuth(steam_cookies_path=STEAM_COOKIES_PATH,
