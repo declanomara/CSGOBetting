@@ -32,11 +32,13 @@ def seconds_to_readable(seconds):
         return f"{seconds}s"
 
 def gather_matches(timeframe=60*5):
-    # Only check matches that start within the next 5 minutes
+    # Bets are placed 10 minutes before the match starts, so we want to gather matches that are 10 minutes from now
+    # We might also want to add an upper bound to this, as we don't want to place bets on matches that are too far in the future
     now = int(time.time())
-    time_threshold = now + timeframe
+    after = now + 60 * 10
+    before = after + timeframe
 
-    endpoint = f"/matches?before={time_threshold}&after={now}"
+    endpoint = f"/matches?before={before}&after={after}"
     response = requests.get(URL + endpoint)
     matches = json.loads(response.text)
     return matches
