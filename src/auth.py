@@ -1,26 +1,29 @@
 import time
 import random
 import json
+import argparse
 
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.common.by import By
-import json
 from json.decoder import JSONDecodeError
 
 
 # Constants
 STEAM_BASE_URL = "https://steamcommunity.com"
+STEAM_LOGIN_URL = "https://steamcommunity.com/login/home/?goto="
 LOGIN_REDIRECT_URL = "https://steamcommunity.com/openid/login?openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&openid.mode=checkid_setup&openid.return_to=https%3A%2F%2Fdota2.net%2Flogin%2Findex.php%3Fgetmid%3Dcsgolounge%26login%3D1&openid.realm=https%3A%2F%2Fdota2.net&openid.ns.sreg=http%3A%2F%2Fopenid.net%2Fextensions%2Fsreg%2F1.1&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select"
 LOGIN_URL = "https://csgolounge.com/login/"
 LOUNGE_URL = "https://csgolounge.com/"
 STEAM_LOGIN_BUTTON_ID = "imageLogin"
+STEAM_LOGIN_QR_XPATH = '//*[@id="responsive_page_template_content"]/div[1]/div[1]/div/div/div/div[2]/div/div/div/div[2]/div/div/div'
 
 
 class CSGOLoungeAuth:
     def __init__(self, steam_cookies_path="cookies.json", save_file=None, headless=True):
         self.steam_timeout = 10
+        self.login_ss_path = "login.png"
 
         self._headless = headless
         self._driver = self._setup_driver()
@@ -48,14 +51,41 @@ class CSGOLoungeAuth:
 
         return webdriver.Chrome(options=chrome_options)
     
-    def _login_to_csgolounge(self):
-        # Load Steam home page before injecting Steam cookies
-        self._driver.get(STEAM_BASE_URL)
+    def _manual_login_to_steam(self):
+        self._driver.get(STEAM_LOGIN_URL)
+        WebDriverWait(self._driver, self.steam_timeout).until(
+            expected_conditions.presence_of_element_located((By.XPATH, STEAM_LOGIN_QR_XPATH))
+        )
+        self._driver.save_screenshot(self.login_ss_path)
 
+        print(f"Please scan the QR code in {self.login_ss_path} and login to steam.")
+
+        # Wait for the login to complete, the URL will change to steamcommunity.com/id/<username>
+        WebDriverWait(self._driver, 120).until(
+            expected_conditions.url_contains("steamcommunity.com/id/")
+        )
+
+        # Save cookies to file
+        cookies = self._driver.get_cookies()
+        with open(self._steam_cookies_path, "w+") as f:
+            json.dump(cookies, f)
+
+    
+    def _login_to_csgolounge(self):
         print("Loading cookies...")
         # Load cookies from file
-        with open(self._steam_cookies_path, "r") as f:
-            cookies = json.load(f)
+        try:
+            with open(self._steam_cookies_path, "r") as f:
+                cookies = json.load(f)
+        except Exception as e:
+            print(f"Error loading cookies: {e}")
+            print("Manually logging in to Steam...")
+            self._manual_login_to_steam()
+            with open(self._steam_cookies_path, "r") as f:
+                cookies = json.load(f)
+        
+        # Load Steam home page before injecting Steam cookies
+        self._driver.get(STEAM_BASE_URL)
 
         print("Injecting cookies...")
         # Add cookies to driver
@@ -145,38 +175,11 @@ class CSGOLoungeAuth:
         return self._lounge_session
     
 if __name__ == "__main__":
-    auth = CSGOLoungeAuth(steam_cookies_path="/Users/declan/Documents/Programs/CSGOBetting/notebooks/cookies.json",
-                           save_file="authentication.json",
-                           headless=True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cookies", default="cookies.json", help="Path to the cookies file")
+    parser.add_argument("--save-file", default="authentication.json", help="Path to the save file")
+    args = parser.parse_args()
+
+    auth = CSGOLoungeAuth(steam_cookies_path=args.cookies, save_file=args.save_file, headless=True)
     
     print(auth.get_session())
-
-
-# def authenticate():
-#     driver = setup_driver()
-
-#     try:
-#         # Login to csgolounge
-#         print("Logging in...", end="")
-#         login_to_csgolounge(driver)
-#         print("Done")
-
-#         # Get session cookie and token
-#         print("Getting session...", end="")
-#         lounge_session = get_lounge_session(driver)
-#         print(lounge_session)
-
-#         # Save cookies for next time
-#         driver.get(STEAM_BASE_URL)
-#         cookies = driver.get_cookies()
-#         with open("cookies.json", "w+") as f:
-#             json.dump(cookies, f)
-
-#         driver.quit()
-#     except Exception as e:
-#         driver.save_screenshot("error.png")
-#         driver.quit()
-#         raise e
-    
-#     return lounge_session
-
