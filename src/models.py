@@ -54,6 +54,25 @@ class BovadaMatch:
             team1_moneyline=self.team2_moneyline,
             team2_moneyline=self.team1_moneyline
         )
+    
+    def to_JSON(self):
+        return {
+            "time": self.time,
+            "team1": self.team1,
+            "team2": self.team2,
+            "team1_moneyline": self.team1_moneyline,
+            "team2_moneyline": self.team2_moneyline
+        }
+    
+    @staticmethod
+    def from_JSON(json):
+        return BovadaMatch(
+            time=json["time"],
+            team1=json["team1"],
+            team2=json["team2"],
+            team1_moneyline=json["team1_moneyline"],
+            team2_moneyline=json["team2_moneyline"]
+        )
       
     @staticmethod
     def from_event(event):
@@ -133,6 +152,29 @@ class LoungeMatch:
     @property
     def t2_multiplier(self):
         return 1 / self.t2_odds if self.t2_odds != 0 else 0
+    
+    def to_JSON(self):
+        return {
+            "id": self.id,
+            "time": self.time,
+            "status": self.status,
+            "team1": self.team1,
+            "team2": self.team2,
+            "t1_value": self.t1_value,
+            "t2_value": self.t2_value
+        }
+    
+    @staticmethod
+    def from_JSON(json):
+        return LoungeMatch(
+            id=json["id"],
+            time=json["time"],
+            status=json["status"],
+            team1=json["team1"],
+            team2=json["team2"],
+            t1_value=json["t1_value"],
+            t2_value=json["t2_value"]
+        )
     
     @staticmethod
     def from_dict(match_dict):
@@ -236,8 +278,18 @@ class UnifiedMatch:
             "bovada_odds": self.bovada_odds,
             "lounge_multiplier": self.lounge_multiplier,
             "expected_value": self.expected_value,
-            "last_updated": self.last_updated
+            "last_updated": self.last_updated,
+            "lounge_match": self._lounge_match.to_JSON(),
+            "bovada_match": self._bovada_match.to_JSON()
         }
+    
+    @staticmethod
+    def from_JSON(json):
+        return UnifiedMatch(
+            BovadaMatch.from_JSON(json["bovada_match"]),
+            LoungeMatch.from_JSON(json["lounge_match"]),
+            last_updated=json["last_updated"]
+        )
 
     def serialize(self):
         return {
