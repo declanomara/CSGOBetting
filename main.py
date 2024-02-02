@@ -94,7 +94,9 @@ def find_closest_match(bovada_match, lounge_matches):
     closest_match = None
     for lm in lounge_matches:
         diff = abs(lm.time - bovada_match.time)
-        if diff < least_diff:
+
+        name_match = (bovada_match.team1, bovada_match.team2) == (lm.team1, lm.team2)
+        if diff < least_diff and name_match:
             least_diff = diff
             closest_match = lm
 
@@ -118,6 +120,11 @@ def pair_matches(bovada_matches, lounge_matches):
             unpaired.append(bm)
             continue
         else:
+            m = f"Found pair:\n" \
+                f"\tBovada: {bm.title()}\n" \
+                f"\tLounge: {closest_match.title()}"
+            print(m)
+            
             pairs.append((bm, closest_match))
 
     return pairs, unpaired

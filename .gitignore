@@ -163,3 +163,7 @@ cython_debug/
 *.db
 chrome_user_data/
 *.json
+
+# Ignore all screenshots
+login.png
+error.png

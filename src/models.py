@@ -27,6 +27,9 @@ class BovadaMatch:
     team1_moneyline: float
     team2_moneyline: float
 
+    def title(self):
+        return f"{self.team1} vs {self.team2} {datetime.fromtimestamp(self.time)}"
+
     @property
     def t1_odds(self):
         return moneyline_to_probability(self.team1_moneyline) / (moneyline_to_probability(self.team1_moneyline) + moneyline_to_probability(self.team2_moneyline))
@@ -107,6 +110,9 @@ class LoungeMatch:
     team2: str
     t1_value: float
     t2_value: float
+
+    def title(self):
+        return f"{self.team1} vs {self.team2} {datetime.fromtimestamp(self.time)}"
 
     @property
     def total_value(self):
@@ -296,5 +302,53 @@ class Bet:
             time_placed=json["time_placed"]
         )
 
+
+# A modified match is a unified match with a bet placed on it, hence the value of of one of the teams is reduced by the amount of the bet
+class ModifiedMatch:
+    def __init__(self, unified_match: UnifiedMatch, bet: Bet):
+        self.unified_match = unified_match
+        self.bet = bet
+
+        # Adjust the value of the team that the bet was placed on
+        if self.bet.side == 0:
+            self.unified_match._lounge_match.t1_value -= self.bet.amount
+        else:
+            self.unified_match._lounge_match.t2_value -= self.bet.amount
+    
+    @property
+    def time(self):
+        return self.unified_match.time
+    
+    @property
+    def competitors(self):
+        return self.unified_match.competitors
+    
+    @property
+    def status(self):
+        return self.unified_match.status
+    
+    @property
+    def bovada_odds(self):
+        return self.unified_match.bovada_odds
+    
+    @property
+    def lounge_id(self):
+        return self.unified_match.lounge_id
+    
+    @property
+    def lounge_odds(self):
+        return self.unified_match.lounge_odds
+    
+    @property
+    def lounge_multiplier(self):
+        return self.unified_match.lounge_multiplier
+    
+    @property
+    def existing_value(self):
+        return self.unified_match.existing_value
+    
+    @property
+    def expected_value(self):
+        return self.unified_match.expected_value
 
     
