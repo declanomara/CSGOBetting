@@ -34,16 +34,18 @@ def send_email(sender_email, receiver_email, subject, message, smtp_server, smtp
     except Exception as e:
         print("Failed to send email. Error:", str(e))
 
-# Creating all the parameters
-sender_email = "CSGO Betting Alerts"
-receiver_email = "declan@omara.us"
-subject = "+EV Opportunity Found!"
-message = "This is a test message."
 
-smtp_server = "smtp.gmail.com"
-smtp_port = 587
-smtp_username = "d.omara000@gmail.com"
-smtp_password = "efzl vwys rrqh fwfy"
+if __name__ == "__main__":
+    # Creating all the parameters
+    sender_email = "CSGO Betting Alerts"
+    receiver_email = "declan@omara.us"
+    subject = "+EV Opportunity Found!"
+    message = "This is a test message."
 
-# Call the function
-send_email(sender_email, receiver_email, subject, message, smtp_server, smtp_port, smtp_username, smtp_password)
+    smtp_server = "smtp.gmail.com"
+    smtp_port = 587
+    smtp_username = "d.omara000@gmail.com"
+    smtp_password = "efzl vwys rrqh fwfy"
+
+    # Call the function
+    send_email(sender_email, receiver_email, subject, message, smtp_server, smtp_port, smtp_username, smtp_password)

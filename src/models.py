@@ -357,9 +357,9 @@ class Bet:
 
 # A modified match is a unified match with a bet placed on it, hence the value of of one of the teams is reduced by the amount of the bet
 class ModifiedMatch:
-    def __init__(self, unified_match: UnifiedMatch, bet: Bet):
+    def __init__(self, unified_match: UnifiedMatch, bet: Bet = None):
         self.unified_match = unified_match
-        self.bet = bet
+        self.bet = bet if bet is not None else Bet(0, 0, 0)
 
         # Adjust the value of the team that the bet was placed on
         if self.bet.side == 0:

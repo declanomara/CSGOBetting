@@ -126,6 +126,7 @@ async def place_bet(match_id: int, side: int, amount: float):
 
 # Cancel a bet with:
 # match_id: int
+# TODO: Change this to use /bets/{bet_id} instead
 @app.delete("/bets")
 async def cancel_bet(match_id: int):
     match = db.get_match_by_id(match_id)
