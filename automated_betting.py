@@ -31,14 +31,13 @@ def seconds_to_readable(seconds):
     else:
         return f"{seconds}s"
 
-def gather_matches(timeframe=60*5):
-    # Bets are placed 10 minutes before the match starts, so we want to gather matches that are 10 minutes from now
-    # We might also want to add an upper bound to this, as we don't want to place bets on matches that are too far in the future
+def gather_matches(timeframe=60):
+    # Bets cannot be cancelled within 10 minutes of the match starting, so we want to place bets at the last possible moment to avoid the odds changing
+    # We will check for matches that start within {timeframe} seconds from now and only consider those
     now = int(time.time())
-    after = now + 60 * 10
-    before = after + timeframe
+    before = now + timeframe
 
-    endpoint = f"/matches?before={before}&after={after}"
+    endpoint = f"/matches?before={before}&after={now}"
     response = requests.get(URL + endpoint)
     matches = json.loads(response.text)
     return matches
@@ -118,7 +117,7 @@ def get_bet(match_id):
 
 
 def main():
-    matches_json = gather_matches(timeframe=60*10**9)
+    matches_json = gather_matches()
     matches = [UnifiedMatch.from_JSON(match) for match in matches_json]
 
     transactions = []
