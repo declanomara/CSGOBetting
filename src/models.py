@@ -202,15 +202,24 @@ class LoungeMatch:
         t1_value = 0
         t2_value = 0
 
-        for currency in sumbets:
-            if "1" not in sumbets[currency]:
-                sumbets[currency]["1"] = 0
+        if "1" not in sumbets["USD"]:
+            sumbets["USD"]["1"] = 0
 
-            if "2" not in sumbets[currency]:
-                sumbets[currency]["2"] = 0
+        if "2" not in sumbets["USD"]:
+            sumbets["USD"]["2"] = 0
 
-            t1_value += sumbets[currency]["1"] * TO_USD[currency]
-            t2_value += sumbets[currency]["2"] * TO_USD[currency]
+        t1_value += sumbets["USD"]["1"] #* TO_USD["USD"]
+        t2_value += sumbets["USD"]["2"] # * TO_USD["USD"]
+
+        # for currency in sumbets:
+        #     if "1" not in sumbets[currency]:
+        #         sumbets[currency]["1"] = 0
+
+        #     if "2" not in sumbets[currency]:
+        #         sumbets[currency]["2"] = 0
+
+        #     t1_value += sumbets[currency]["1"] * TO_USD[currency]
+        #     t2_value += sumbets[currency]["2"] * TO_USD[currency]
 
         return LoungeMatch(id, time, status, team1, team2, t1_value / 100, t2_value / 100)
     
