@@ -145,7 +145,7 @@ def update_matches(session, db: Database):
     # Pair matches
     # TODO: Sometimes unpaired matches contain matches that are already in the database, in which case we should update the match
     #       These updates will include the outcome of the match, which is important
-    paired_matches, _ = pair_matches(bovada_matches, lounge_matches)
+    paired_matches, unpaired = pair_matches(bovada_matches, lounge_matches)
 
     # Unify matches into general format containing all information
     unified_matches = unify_matches(paired_matches)
@@ -163,6 +163,15 @@ def update_matches(session, db: Database):
         if success:
             updates += 1
             continue
+
+    # Unpaired
+    print("Unpaired matches:")
+    for match in unpaired:
+        print(f"\t{match.title()}")
+
+    # for match in lounge_matches:
+    #     print(f"Lounge match: {match.title()}\n")
+    
 
     # Return the number of matches that were added
     return additions, updates

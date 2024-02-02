@@ -116,7 +116,11 @@ lounge_to_bovada = {
     "Preasy": "Preasy",
     "Entropiq": "Entropiq",
     "Sprout": "Sprout",
-    "ALTERNATE aTTaX": "Alternate Attax"
+    "ALTERNATE aTTaX": "Alternate Attax",
+    "BESTIA": "Bestia",
+    "Imperial (Brazil)": "Imperial Esports",
+    "Na'Vi": "Natus Vincere",
+    "Wildcard": "Wildcard Gaming"
 }
 
 
