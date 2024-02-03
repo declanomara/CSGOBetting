@@ -13,7 +13,8 @@ URL = "http://dserver:8000"
 LOUNGE_URL = "https://csgolounge.com/"
 LOCAL_DB_PATH = "matches.db"
 
-MINIMUM_EV_THRESHOLD = 0.25
+MINIMUM_EV_THRESHOLD = 0.2
+MINIMUM_POOL_THRESHOLD = 10
 
 def seconds_to_readable(seconds):
     # Return the number of seconds in a human-readable format
@@ -69,7 +70,7 @@ def send_notification(message):
 
 def is_high_ev(match: ModifiedMatch):
     exceeds_ev_threshold = match.expected_value[0] > MINIMUM_EV_THRESHOLD or match.expected_value[1] > MINIMUM_EV_THRESHOLD
-    exceeds_pool_threshold = match.existing_value[0] > 50 and match.existing_value[1] > 50
+    exceeds_pool_threshold = match.existing_value[0] > MINIMUM_POOL_THRESHOLD and match.existing_value[1] > MINIMUM_POOL_THRESHOLD
     high_ev = exceeds_ev_threshold and exceeds_pool_threshold
     side = int(match.expected_value[0] < match.expected_value[1])
 
