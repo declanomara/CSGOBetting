@@ -16,6 +16,8 @@ LOCAL_DB_PATH = "matches.db"
 MINIMUM_EV_THRESHOLD = 0.2
 MINIMUM_POOL_THRESHOLD = 10
 
+SECONDS_UNTIL_MATCH = 15
+
 def seconds_to_readable(seconds):
     # Return the number of seconds in a human-readable format
     # Xh Xm Xs
@@ -118,7 +120,7 @@ def get_bet(match_id):
 
 
 def main():
-    matches_json = gather_matches()
+    matches_json = gather_matches(SECONDS_UNTIL_MATCH)
     matches = [UnifiedMatch.from_JSON(match) for match in matches_json]
 
     transactions = []
