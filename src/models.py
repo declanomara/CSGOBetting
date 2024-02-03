@@ -196,11 +196,13 @@ class LoungeMatch:
         
         # Convert the currencies to USD and calculate the total value of each team
         # TODO: Update the exchange rates periodically
-        TO_USD = {"EUR": 1.09, "RUB": 0.011, "USD": 1}
         sumbets = match_dict["sumbets"]
 
         t1_value = 0
         t2_value = 0
+
+        if "USD" not in sumbets:
+            return LoungeMatch(id, time, status, team1, team2, 0, 0)
 
         if "1" not in sumbets["USD"]:
             sumbets["USD"]["1"] = 0
