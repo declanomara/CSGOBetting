@@ -5,7 +5,8 @@
 
 # The commands to run
 COMMANDS=(
-  "* * * * * cd /home/declan/Documents/CSGOBetting/ && (.venv/bin/python3 main.py csgobetting.db >> output.log 2>error.log ; .venv/bin/python3 automated_betting.py >> betting.log 2>error.log)"
+  "cd /home/declan/Documents/CSGOBetting/ && .venv/bin/python3 main.py csgobetting.db >> output.log 2>error.log",
+  "cd /home/declan/Documents/CSGOBetting/ && .venv/bin/python3 automated_betting.py >> betting.log 2>error.log)",
   "echo 'Ran the commands at $(date)'"
 )
 
