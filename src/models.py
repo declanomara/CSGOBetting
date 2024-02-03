@@ -198,30 +198,21 @@ class LoungeMatch:
         # TODO: Update the exchange rates periodically
         sumbets = match_dict["sumbets"]
 
-        t1_value = 0
-        t2_value = 0
+        pool_sizes = {'USD': (0, 0),
+                  'EUR': (0, 0),
+                  'RUB': (0, 0),}
+        
+        exchange_rates = {'USD': 1,
+                          'EUR': 1.08,
+                          'RUB': 0.011}
+        
+        for currency in sumbets.keys():
+            pool_sizes[currency] = (sumbets[currency]["1"]*exchange_rates[currency], sumbets[currency]["2"]*exchange_rates[currency])
 
-        if "USD" not in sumbets:
-            return LoungeMatch(id, time, status, team1, team2, 0, 0)
-
-        if "1" not in sumbets["USD"]:
-            sumbets["USD"]["1"] = 0
-
-        if "2" not in sumbets["USD"]:
-            sumbets["USD"]["2"] = 0
-
-        t1_value += sumbets["USD"]["1"] #* TO_USD["USD"]
-        t2_value += sumbets["USD"]["2"] # * TO_USD["USD"]
-
-        # for currency in sumbets:
-        #     if "1" not in sumbets[currency]:
-        #         sumbets[currency]["1"] = 0
-
-        #     if "2" not in sumbets[currency]:
-        #         sumbets[currency]["2"] = 0
-
-        #     t1_value += sumbets[currency]["1"] * TO_USD[currency]
-        #     t2_value += sumbets[currency]["2"] * TO_USD[currency]
+        sort = sorted(pool_sizes.values(), key=lambda x: x[0] + x[1], reverse=True)
+        
+        t1_value = sort[0][0]
+        t2_value = sort[0][1]
 
         return LoungeMatch(id, time, status, team1, team2, t1_value / 100, t2_value / 100)
     
