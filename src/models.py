@@ -224,10 +224,12 @@ class LoungeMatch:
 
             pool_sizes[currency] = (sumbets[currency]["1"]*exchange_rates[currency], sumbets[currency]["2"]*exchange_rates[currency])
 
-        sort = sorted(pool_sizes.values(), key=lambda x: x[0] + x[1], reverse=True)
+        # sort = sorted(pool_sizes.values(), key=lambda x: x[0] + x[1], reverse=True)
+        t1_values = sorted([x[0] for x in pool_sizes.values()], reverse=True)
+        t2_values = sorted([x[1] for x in pool_sizes.values()], reverse=True)
         
-        t1_value = sort[0][0]
-        t2_value = sort[0][1]
+        t1_value = t1_values[0]
+        t2_value = t2_values[0]
 
         return LoungeMatch(id, time, status, team1, team2, t1_value / 100, t2_value / 100)
     
