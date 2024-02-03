@@ -99,12 +99,14 @@ class Database:
     def update_match(self, match: UnifiedMatch):
         # Update the match in the database with the same id
         serialized = match.serialize()
-        query = "UPDATE matches SET lounge_status = ?, lounge_t1_value = ?, lounge_t2_value = ?, bovada_t1_moneyline = ?, bovada_t2_moneyline = ?, last_updated = ? WHERE id = ?"
+        query = "UPDATE matches SET lounge_time = ?, lounge_status = ?, lounge_t1_value = ?, lounge_t2_value = ?, bovada_time = ?, bovada_t1_moneyline = ?, bovada_t2_moneyline = ?, last_updated = ? WHERE id = ?"
         try:
             self._cur.execute(query, (
+                serialized['lounge_time'],
                 serialized['lounge_status'],
                 serialized['lounge_t1_value'],
                 serialized['lounge_t2_value'],
+                serialized['bovada_time'],
                 serialized['bovada_t1_moneyline'],
                 serialized['bovada_t2_moneyline'],
                 serialized['last_updated'],
