@@ -76,10 +76,14 @@ class BovadaMatch:
       
     @staticmethod
     def from_event(event):
+        team1 = event["competitors"][0]["name"]
+        team2 = event["competitors"][1]["name"]
+        team1, team2 = team1.strip(), team2.strip()
+
         return BovadaMatch(
             time=int(event["startTime"] / 1000),
-            team1=event["competitors"][0]["name"],
-            team2=event["competitors"][1]["name"],
+            team1=team1,
+            team2=team2,
             team1_moneyline=parse_moneyline(event["displayGroups"][0]["markets"][0]["outcomes"][0]["price"]["american"]),
             team2_moneyline=parse_moneyline(event["displayGroups"][0]["markets"][0]["outcomes"][1]["price"]["american"])
         )
@@ -120,7 +124,12 @@ lounge_to_bovada = {
     "BESTIA": "Bestia",
     "Imperial (Brazil)": "Imperial Esports",
     "Na'Vi": "Natus Vincere",
-    "Wildcard": "Wildcard Gaming"
+    "Wildcard": "Wildcard Gaming",
+    "coL": "Complexity",
+    "mousesports": "Mouz",
+    "mibr": "MIBR",
+    "Sinners (CZ)": "SinnerS",
+    'ex-Anonymo': 'ex-Anonymo Esports',
 }
 
 
@@ -189,6 +198,7 @@ class LoungeMatch:
         # We arbitrarily choose to unify the names of the teams to the Bovada names
         team1 = lounge_to_bovada[match_dict["t1name"]] if match_dict["t1name"] in lounge_to_bovada else match_dict["t1name"]
         team2 = lounge_to_bovada[match_dict["t2name"]] if match_dict["t2name"] in lounge_to_bovada else match_dict["t2name"]
+        team1, team2 = team1.strip(), team2.strip()
 
         # If no bets have been placed on the match, the sumbets key will not exist
         if "sumbets" not in match_dict:
@@ -207,6 +217,11 @@ class LoungeMatch:
                           'RUB': 0.011}
         
         for currency in sumbets.keys():
+            if '1' not in sumbets[currency]:
+                sumbets[currency]["1"] = 0
+            if '2' not in sumbets[currency]:
+                sumbets[currency]["2"] = 0
+
             pool_sizes[currency] = (sumbets[currency]["1"]*exchange_rates[currency], sumbets[currency]["2"]*exchange_rates[currency])
 
         sort = sorted(pool_sizes.values(), key=lambda x: x[0] + x[1], reverse=True)

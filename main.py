@@ -84,6 +84,7 @@ def get_lounge_matches(session):
             lounge_match = LoungeMatch.from_dict(match)
             lounge_matches.append(lounge_match)
         except Exception as e:
+            raise
             print(f"Error occurred while creating LoungeMatch: {e}")
 
     return lounge_matches
@@ -95,7 +96,13 @@ def find_closest_match(bovada_match, lounge_matches):
     for lm in lounge_matches:
         diff = abs(lm.time - bovada_match.time)
 
-        name_match = (bovada_match.team1, bovada_match.team2) == (lm.team1, lm.team2)
+        name_match = (bovada_match.team1.lower(), bovada_match.team2.lower()) == (lm.team1.lower(), lm.team2.lower())
+        
+        # For debugging:
+        # if "Young Ninjas" in bovada_match.team1:
+        #     print(f"Diff: {diff}, Bovada: {bovada_match.time}, Lounge: {lm.time}")
+        #     print(f"Name match: {name_match} ({bovada_match.team1.lower()}, {bovada_match.team2.lower()}) == ({lm.team1.lower()}, {lm.team2.lower()})")
+        
         if diff < least_diff and name_match:
             least_diff = diff
             closest_match = lm
