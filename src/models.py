@@ -228,10 +228,12 @@ class LoungeMatch:
         t1_values = sorted([x[0] for x in pool_sizes.values()], reverse=True)
         t2_values = sorted([x[1] for x in pool_sizes.values()], reverse=True)
         
-        # t1_value = t1_values[0]
-        # t2_value = t2_values[0]
-        t1_value = sum(t1_values)
-        t2_value = sum(t2_values)
+        if status == 0:
+            t1_value = sum(t1_values)
+            t2_value = sum(t2_values)
+        else:
+            t1_value = t1_values[0]
+            t2_value = t2_values[0]
 
         return LoungeMatch(id, time, status, team1, team2, t1_value / 100, t2_value / 100)
     
