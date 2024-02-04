@@ -69,7 +69,7 @@ def parse_lounge_matches(html):
     return json.loads(json_data)
 
 
-def get_lounge_matches(session):
+def get_lounge_matches(session) -> list[LoungeMatch]:
     try:
         response = session.get(LOUNGE_URL)
         response.raise_for_status()  # Raise an exception if the request was not successful

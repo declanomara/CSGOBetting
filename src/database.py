@@ -52,6 +52,29 @@ class Database:
                 time INT
         )''')
 
+        # Create the archive table if it does not exist
+        self._cur.execute('''
+            CREATE TABLE IF NOT EXISTS archive (
+                id INT,
+                lounge_time INT,
+                lounge_status TEXT,
+                lounge_team1 TEXT,
+                lounge_team2 TEXT,
+                lounge_t1_value REAL,
+                lounge_t2_value REAL,
+                bovada_time INT,
+                bovada_team1 TEXT,
+                bovada_team2 TEXT,
+                bovada_t1_moneyline REAL,
+                bovada_t2_moneyline REAL,
+                last_updated INT,
+                PRIMARY KEY (id, last_updated)
+        )''')
+
+        query = "CREATE INDEX IF NOT EXISTS index_id ON archive (id)"
+        self._cur.execute(query)
+        self._conn.commit()
+
     def _row_to_match(self, row):
         serialized = {
             'lounge_id': row[0],
@@ -98,6 +121,7 @@ class Database:
 
     def update_match(self, match: UnifiedMatch):
         # Update the match in the database with the same id
+        self.archive(match.lounge_id)
         serialized = match.serialize()
         query = "UPDATE matches SET lounge_time = ?, lounge_status = ?, lounge_t1_value = ?, lounge_t2_value = ?, bovada_time = ?, bovada_t1_moneyline = ?, bovada_t2_moneyline = ?, last_updated = ? WHERE id = ?"
         try:
@@ -253,6 +277,37 @@ class Database:
         query = "DELETE FROM bets WHERE match_id = ?"
         self._cur.execute(query, (match_id,))
         self._conn.commit()
+
+    def archive(self, match_id):
+        # Archive a match by copying it to the archive table
+        query = "SELECT * FROM matches WHERE id = ?"
+        self._cur.execute(query, (match_id,))
+        row = self._cur.fetchone()
+        if row is None:
+            return False
+        
+        query = """
+        INSERT INTO archive (
+            id, lounge_time, lounge_status, lounge_team1, lounge_team2, lounge_t1_value, lounge_t2_value, bovada_time, bovada_team1, bovada_team2, bovada_t1_moneyline, bovada_t2_moneyline, last_updated
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        self._cur.execute(query, row)
+        self._conn.commit()
+
+        return True
+    
+    def get_historical_matches_by_id(self, match_id):
+        # Return the time series changes for a match from the archive table
+        # Simply gather all rows with the same match_id in order of last_updated
+        query = "SELECT * FROM archive WHERE id = ? ORDER BY last_updated ASC"
+        self._cur.execute(query, (match_id,))
+        rows = self._cur.fetchall()
+        matches = []
+        for row in rows:
+            match = self._row_to_match(row)
+            matches.append(match)
+
+        return matches
     
 
 

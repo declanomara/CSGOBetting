@@ -59,6 +59,23 @@ async def read_match(match_id: int):
     else:
         return match.to_JSON()
     
+@app.get("/matches/{match_id}/historical")
+async def read_matches_historical(match_id: int):
+    start = time.time()
+    matches = db.get_historical_matches_by_id(match_id)
+    print(f"Time to get historical matches: {time.time() - start}")
+    if not matches:
+        return {"error": "match not found"}
+    
+    else:
+        start = time.time()
+        
+        response = [match.to_JSON() for match in matches]
+        response = response[-1:0:-len(response)//100]
+        print(f"Time to convert to JSON: {time.time() - start}")
+        # return {y: [{x: [n for n in range(0, 10)]} for x in range(0, 10)] for y in range(0, 10)}
+        return response
+    
 @app.get("/bets")
 async def read_bets(limit: int = 100):
     bets = db.get_bets()
@@ -156,3 +173,4 @@ async def cancel_bet(match_id: int):
 
     db.delete_bet_by_match_id(match_id)
     return {"success": True, "attempts": attempts}
+
