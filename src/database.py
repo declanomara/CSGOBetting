@@ -296,11 +296,24 @@ class Database:
 
         return True
     
-    def get_historical_matches_by_id(self, match_id):
+    def get_historical_matches_by_id(self, match_id, after=None, before=None):
         # Return the time series changes for a match from the archive table
         # Simply gather all rows with the same match_id in order of last_updated
-        query = "SELECT * FROM archive WHERE id = ? ORDER BY last_updated ASC"
-        self._cur.execute(query, (match_id,))
+
+        query = "SELECT * FROM archive WHERE id = ?"
+        params = [match_id]
+
+        if after:
+            query += " AND last_updated > ?"
+            params.append(after)
+
+        if before:
+            query += " AND last_updated < ?"
+            params.append(before)
+
+        query += " ORDER BY last_updated ASC"
+
+        self._cur.execute(query, params)
         rows = self._cur.fetchall()
         matches = []
         for row in rows:
