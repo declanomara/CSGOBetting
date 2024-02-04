@@ -60,9 +60,10 @@ async def read_match(match_id: int):
         return match.to_JSON()
     
 @app.get("/matches/{match_id}/historical")
-async def read_matches_historical(match_id: int):
+async def read_matches_historical(match_id: int, limit: int = 100, after: int | None = None, before: int | None = None):
     start = time.time()
     matches = db.get_historical_matches_by_id(match_id)
+    
     print(f"Time to get historical matches: {time.time() - start}")
     if not matches:
         return {"error": "match not found"}
@@ -71,7 +72,7 @@ async def read_matches_historical(match_id: int):
         start = time.time()
         
         response = [match.to_JSON() for match in matches]
-        response = response[-1:0:-len(response)//100]
+        response = response[-1:0:-len(response)//limit]
         print(f"Time to convert to JSON: {time.time() - start}")
         # return {y: [{x: [n for n in range(0, 10)]} for x in range(0, 10)] for y in range(0, 10)}
         return response
