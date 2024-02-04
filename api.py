@@ -62,8 +62,9 @@ async def read_match(match_id: int):
 @app.get("/matches/{match_id}/historical")
 async def read_matches_historical(match_id: int, limit: int = 100, after: int | None = None, before: int | None = None):
     start = time.time()
-    matches = db.get_historical_matches_by_id(match_id)
+    matches = db.get_historical_matches_by_id(match_id, after=after, before=before)
     
+
     print(f"Time to get historical matches: {time.time() - start}")
     if not matches:
         return {"error": "match not found"}
