@@ -11,10 +11,10 @@ from src.auth import CSGOLoungeAuth
 from src.models import Bet
 
 origins = [
-    "http://dserver:8000",
-    "https://dserver:8000",
-    "http://100.105.59.23:8000",
-    "http://100.105.59.23:8000",
+    "http://dserver:3000",
+    "https://dserver:3000",
+    "http://100.105.59.23:3000",
+    "http://100.105.59.23:3000",
 ]
 
 
