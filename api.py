@@ -3,11 +3,20 @@ import requests
 import json
 
 from fastapi import FastAPI, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 from src.database import Database
 from src.auth import CSGOLoungeAuth
 from src.models import Bet
+
+origins = [
+    "http://dserver:8000",
+    "https://dserver:8000",
+    "http://100.105.59.23:8000",
+    "http://100.105.59.23:8000",
+]
+
 
 config = json.load(open("api_config.json", "r"))
 
@@ -31,6 +40,14 @@ async def lifespan(app: FastAPI):
     db.close()
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
