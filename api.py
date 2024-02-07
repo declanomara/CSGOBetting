@@ -2,7 +2,8 @@ import time
 import requests
 import json
 
-from fastapi import FastAPI
+from fastapi import FastAPI, BackgroundTasks
+from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 from src.database import Database
 from src.auth import CSGOLoungeAuth
@@ -175,4 +176,13 @@ async def cancel_bet(match_id: int):
 
     db.delete_bet_by_match_id(match_id)
     return {"success": True, "attempts": attempts}
+
+def finish_login():
+    auth._finish_manual_login_to_steam()
+
+@app.get("/auth")
+async def reauthenticate(background_tasks: BackgroundTasks):
+    screenshot_path = auth._begin_manual_login_to_steam()
+    background_tasks.add_task(finish_login)
+    return FileResponse(screenshot_path)
 

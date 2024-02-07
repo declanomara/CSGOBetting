@@ -6,6 +6,7 @@ import argparse
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from json.decoder import JSONDecodeError
 
@@ -51,7 +52,7 @@ class CSGOLoungeAuth:
 
         return webdriver.Chrome(options=chrome_options)
     
-    def _manual_login_to_steam(self):
+    def _begin_manual_login_to_steam(self):
         self._driver.get(STEAM_LOGIN_URL)
         WebDriverWait(self._driver, self.steam_timeout).until(
             expected_conditions.presence_of_element_located((By.XPATH, STEAM_LOGIN_QR_XPATH))
@@ -60,15 +61,24 @@ class CSGOLoungeAuth:
 
         print(f"Please scan the QR code in {self.login_ss_path} and login to steam.")
 
+        return self.login_ss_path
+
+    def _finish_manual_login_to_steam(self):
         # Wait for the login to complete, the URL will change to steamcommunity.com/id/<username>
+        print("Waiting for login to complete...")
         WebDriverWait(self._driver, 120).until(
             expected_conditions.url_contains("steamcommunity.com/id/")
         )
+        print("Login complete")
 
         # Save cookies to file
         cookies = self._driver.get_cookies()
         with open(self._steam_cookies_path, "w+") as f:
             json.dump(cookies, f)
+
+        return True
+
+    
 
     
     def _login_to_csgolounge(self):
@@ -78,11 +88,7 @@ class CSGOLoungeAuth:
             with open(self._steam_cookies_path, "r") as f:
                 cookies = json.load(f)
         except Exception as e:
-            print(f"Error loading cookies: {e}")
-            print("Manually logging in to Steam...")
-            self._manual_login_to_steam()
-            with open(self._steam_cookies_path, "r") as f:
-                cookies = json.load(f)
+            raise Exception(f"Error loading cookies: {e}. Please login to Steam manually.")
         
         # Load Steam home page before injecting Steam cookies
         self._driver.get(STEAM_BASE_URL)
@@ -96,9 +102,12 @@ class CSGOLoungeAuth:
         self._driver.get(LOGIN_REDIRECT_URL)
 
         # Wait for the login button to appear
-        WebDriverWait(self._driver, self.steam_timeout).until(
-            expected_conditions.element_to_be_clickable((By.ID, STEAM_LOGIN_BUTTON_ID))
-        )
+        try:
+            WebDriverWait(self._driver, self.steam_timeout).until(
+                expected_conditions.element_to_be_clickable((By.ID, STEAM_LOGIN_BUTTON_ID))
+            )
+        except TimeoutException:
+            raise TimeoutException("Timed out waiting for login button to appear. Steam login likely failed and a manual login may be required.")
 
         # Wait a random amount of time before clicking the login button
         time.sleep(random.randint(1, 6) / 2)
